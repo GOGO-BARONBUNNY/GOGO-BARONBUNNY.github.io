@@ -40,30 +40,25 @@
     <div id="constellation" class="constellation">c0</div>
   </div>
 
-  <!-- キャラクター選択のドロップダウンメニュー -->
+  <!-- 各種選択ドロップダウンメニュー -->
   <label for="characterSelect">キャラクターを選択:</label>
   <select id="characterSelect">
-    <option value="bow_tighnari.img">ティナリ</option>
-    <option value="bow_yelan.img">イェラン</option>
+    <option value="images/character_tighnari.jpg">ティナリ</option>
+    <option value="images/character_yelan.jpg">イェラン</option>
   </select>
 
-  <!-- 武器選択のドロップダウンメニュー -->
   <label for="weaponSelect">武器を選択:</label>
   <select id="weaponSelect">
-    <option value="https://img.gamewith.jp/article_tools/genshin/gacha/weapon_141.png">狩人</option>
-    <option value="bow_aqua.img">若水</option>
-    <option value="images/weapon2.png">武器2</option>
+    <option value="images/weapon1.png">狩人</option>
+    <option value="images/weapon2.png">若水</option>
   </select>
 
-  <!-- 聖遺物選択のドロップダウンメニュー -->
   <label for="artifactSelect">聖遺物を選択:</label>
   <select id="artifactSelect">
-    <option value="https://img.game8.jp/5155671/7a90ec32c6c8fb694b381888a098ca80.jpeg/show">楽団</option>
-    <option value="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFUF06ATqNgborlAmBV7T3DgjOYO1_LQ8HtA&s">絶縁</option>
-    <option value="images/artifact2.png">聖遺物2</option>
+    <option value="images/artifact1.png">楽団</option>
+    <option value="images/artifact2.png">絶縁</option>
   </select>
 
-  <!-- 凸数選択のドロップダウンメニュー -->
   <label for="constellationSelect">凸数を選択:</label>
   <select id="constellationSelect">
     <option value="0">c0</option>
@@ -76,7 +71,6 @@
     <option value="未所持">未所持</option>
   </select>
 
-  <!-- 保存ボタン -->
   <button id="save-button">画像を保存</button>
 
   <canvas id="canvas" width="200" height="200" style="display:none;"></canvas>
@@ -93,27 +87,22 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    // 凸数の選択が変更されたとき
     constellationSelect.addEventListener('change', function() {
       constellationText.textContent = constellationSelect.value === "未所持" ? "未所持" : `c${constellationSelect.value}`;
     });
 
-    // キャラクター選択が変更されたとき
     characterSelect.addEventListener('change', function() {
       characterImage.src = characterSelect.value;
     });
 
-    // 武器選択が変更されたとき
     weaponSelect.addEventListener('change', function() {
       weaponImage.src = weaponSelect.value;
     });
 
-    // 聖遺物選択が変更されたとき
     artifactSelect.addEventListener('change', function() {
       artifactImage.src = artifactSelect.value;
     });
 
-    // 保存ボタンがクリックされたとき
     document.getElementById('save-button').addEventListener('click', function() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -132,19 +121,15 @@
           artifact.onload = () => {
             ctx.drawImage(artifact, canvas.width - 50, canvas.height - 50, 40, 40);
 
-            // 凸数を表示する円形の背景
             ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
             ctx.beginPath();
-            ctx.arc(canvas.width - 25, 25, 20, 0, 2 * Math.PI); // 半径20
+            ctx.arc(canvas.width - 25, 25, 20, 0, 2 * Math.PI);
             ctx.fill();
             ctx.fillStyle = "white";
             ctx.font = "12px Arial";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-
-            // 凸数のテキスト表示
-            const text = constellationText.textContent;
-            ctx.fillText(text, canvas.width - 25, 25);
+            ctx.fillText(constellationText.textContent, canvas.width - 25, 25);
 
             const link = document.createElement('a');
             link.href = canvas.toDataURL("image/png");
