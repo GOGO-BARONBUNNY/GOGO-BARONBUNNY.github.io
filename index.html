@@ -1,153 +1,282 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ビルド画像ジェネレーター</title>
-  <style>
-    h2{
-      font-family:Toppan Bunkyu Midashi Gothic;
-      font-weight:bold;
-      text-align:center;
+'use client'
+
+import * as React from 'react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Download, RefreshCw } from 'lucide-react'
+
+interface Item {
+  name: string
+  value: string
+}
+
+const characters: Item[] = [
+  { name: 'ティナリ', value: 'https://genshin.honeyhunterworld.com/img/tighnari_069.webp' },
+  { name: '夜蘭', value: 'https://genshin.honeyhunterworld.com/img/yelan_060.webp' },
+  { name: 'ナヒーダ', value: 'https://genshin.honeyhunterworld.com/img/nahida_073.webp' },
+  { name: 'アルハイゼン', value: 'https://genshin.honeyhunterworld.com/img/alhaitham_078.webp' },
+]
+
+const weapons: Item[] = [
+  { name: '狩人の弓', value: 'https://genshin.honeyhunterworld.com/img/hunters_bow_13101.webp' },
+  { name: '若水', value: 'https://genshin.honeyhunterworld.com/img/aqua_simulacra_65511.webp' },
+  { name: 'アモスの弓', value: 'https://genshin.honeyhunterworld.com/img/amos_bow_15509.webp' },
+  { name: '終焉を嘆く詩', value: 'https://genshin.honeyhunterworld.com/img/elegy_for_the_end_15507.webp' },
+  { name: '飛雷の鳴弦', value: 'https://genshin.honeyhunterworld.com/img/thundering_pulse_15508.webp' },
+]
+
+const artifacts: Item[] = [
+  { name: '楽団', value: 'https://genshin.honeyhunterworld.com/img/wanderers_troupe_flower_35311.webp' },
+  { name: '絶縁', value: 'https://genshin.honeyhunterworld.com/img/emblem_of_severed_fate_flower_75511.webp' },
+  { name: '深林の記憶', value: 'https://genshin.honeyhunterworld.com/img/deepwood_memories_flower_76511.webp' },
+  { name: '千岩牢固', value: 'https://genshin.honeyhunterworld.com/img/tenacity_of_the_millelith_flower_75411.webp' },
+  { name: '翠緑の影', value: 'https://genshin.honeyhunterworld.com/img/viridescent_venerer_flower_35411.webp' },
+]
+
+const constellations: Item[] = [
+  { name: 'c0', value: '0' },
+  { name: 'c1', value: '1' },
+  { name: 'c2', value: '2' },
+  { name: 'c3', value: '3' },
+  { name: 'c4', value: '4' },
+  { name: 'c5', value: '5' },
+  { name: 'c6', value: '6' },
+  { name: '未所持', value: '未所持' },
+]
+
+export default function BuildImageGenerator() {
+  const [character, setCharacter] = React.useState(characters[0].value)
+  const [weapon, setWeapon] = React.useState(weapons[0].value)
+  const [artifact, setArtifact] = React.useState(artifacts[0].value)
+  const [constellation, setConstellation] = React.useState(constellations[0].value)
+  const [isSaving, setIsSaving] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+
+  const canvasRef = React.useRef<HTMLCanvasElement>(null)
+
+  const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => resolve(img)
+      img.onerror = () => reject(new Error(`Failed to load image: ${src}`))
+      img.src = src
+    })
+  }
+
+  const handleSave = async () => {
+    setError(null)
+    setIsSaving(true)
+    try {
+      const canvas = canvasRef.current
+      if (!canvas) throw new Error('Canvas not found')
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('Unable to get 2D context')
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      const characterImg = await loadImage(character)
+      ctx.drawImage(characterImg, 0, 0, canvas.width, canvas.height)
+
+      const weaponImg = await loadImage(weapon)
+      ctx.drawImage(weaponImg, 10, canvas.height - 50, 40, 40)
+
+      const artifactImg = await loadImage(artifact)
+      ctx.drawImage(artifactImg, canvas.width - 50, canvas.height - 50, 40, 40)
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
+      ctx.beginPath()
+      ctx.arc(canvas.width - 25, 25, 20, 0, 2 * Math.PI)
+      ctx.fill()
+      ctx.fillStyle = 'white'
+      ctx.font = '12px Arial'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(constellation === '未所持' ? '未所持' : `c${constellation}`, canvas.width - 25, 25)
+
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve))
+      if (!blob) throw new Error('Failed to create blob')
+
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'character_build.png'
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error saving image:', error)
+      setError(`画像の保存中にエラーが発生しました: ${error.message}`)
+    } finally {
+      setIsSaving(false)
     }
-    .character-container {
-      position: relative;
-      width: 200px;
-      height: 200px;
-      margin-bottom: 20px;
-    }
-    .overlay-image {
-      position: absolute;
-      width: 40px;
-      height: 40px;
-    }
-    .weapon { bottom: 10px; left: 10px; }
-    .artifact { bottom: 10px; right: 10px; }
-    .constellation {
-      top: 10px; right: 10px;
-      width: 40px; height: 40px;
-      display: flex; justify-content: center; align-items: center;
-      font-size: 14px; color: white;
-      background-color: rgba(0, 0, 0, 0.6);
-      border-radius: 50%;
-      text-align: center;
-      position: absolute;
-    }
-  </style>
-</head>
-<body>
-  <h2>ビルド画像ジェネレーター</h2>
+  }
 
-  <div class="character-container" id="character-container">
-    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRstQ6h8oDdDTxPxI1Nhbo7DEPmo3QJ5EWQ6g&s" alt="キャラクター" id="character-image" class="character-image">
-    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRstQ6h8oDdDTxPxI1Nhbo7DEPmo3QJ5EWQ6g&s" alt="武器" id="weapon-image" class="weapon overlay-image">
-    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRstQ6h8oDdDTxPxI1Nhbo7DEPmo3QJ5EWQ6g&s" alt="聖遺物" id="artifact-image" class="artifact overlay-image">
-    <div id="constellation" class="constellation">c0</div>
-  </div>
+  const handleReset = () => {
+    setCharacter(characters[0].value)
+    setWeapon(weapons[0].value)
+    setArtifact(artifacts[0].value)
+    setConstellation(constellations[0].value)
+    setError(null)
+  }
 
-  <label for="characterSelect">キャラクターを選択:</label>
-  <select id="characterSelect">
-    <option value="bow_tighnari.img">ティナリ</option>
-    <option value="bow_yelan.img">夜蘭</option>
-  </select>
-
-  <label for="weaponSelect">武器を選択:</label>
-  <select id="weaponSelect">
-    <option value="https://img.gamewith.jp/article_tools/genshin/gacha/weapon_141.png">狩人</option>
-    <option value="bow_aqua.img">若水</option>
-    <option value="images/weapon2.png">武器2</option>
-  </select>
-
-  <label for="artifactSelect">聖遺物を選択:</label>
-  <select id="artifactSelect">
-    <option value="https://img.game8.jp/5155671/7a90ec32c6c8fb694b381888a098ca80.jpeg/show">楽団</option>
-    <option value="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFUF06ATqNgborlAmBV7T3DgjOYO1_LQ8HtA&s">絶縁</option>
-    <option value="images/artifact2.png">聖遺物2</option>
-  </select>
-
-  <label for="constellationSelect">凸数を選択:</label>
-  <select id="constellationSelect">
-    <option value="0">c0</option>
-    <option value="1">c1</option>
-    <option value="2">c2</option>
-    <option value="3">c3</option>
-    <option value="4">c4</option>
-    <option value="5">c5</option>
-    <option value="6">c6</option>
-    <option value="未所持">未所持</option>
-  </select>
-
-  <button id="save-button">画像を保存</button>
-
-  <canvas id="canvas" width="200" height="200" style="display:none;"></canvas>
-
-  <script>
-    const constellationText = document.getElementById('constellation');
-    const constellationSelect = document.getElementById('constellationSelect');
-    const characterSelect = document.getElementById('characterSelect');
-    const weaponSelect = document.getElementById('weaponSelect');
-    const artifactSelect = document.getElementById('artifactSelect');
-    const characterImage = document.getElementById('character-image');
-    const weaponImage = document.getElementById('weapon-image');
-    const artifactImage = document.getElementById('artifact-image');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-
-    constellationSelect.addEventListener('change', function() {
-      constellationText.textContent = constellationSelect.value === "未所持" ? "未所持" : `c${constellationSelect.value}`;
-    });
-
-    characterSelect.addEventListener('change', function() {
-      characterImage.src = characterSelect.value;
-    });
-
-    weaponSelect.addEventListener('change', function() {
-      weaponImage.src = weaponSelect.value;
-    });
-
-    artifactSelect.addEventListener('change', function() {
-      artifactImage.src = artifactSelect.value;
-    });
-
-    document.getElementById('save-button').addEventListener('click', function() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const character = new Image();
-      character.crossOrigin = "anonymous";
-      character.src = characterImage.src;
-      character.onload = () => {
-        ctx.drawImage(character, 0, 0, canvas.width, canvas.height);
-
-        const weapon = new Image();
-        weapon.crossOrigin = "anonymous";
-        weapon.src = weaponImage.src;
-        weapon.onload = () => {
-          ctx.drawImage(weapon, 10, canvas.height - 50, 40, 40);
-
-          const artifact = new Image();
-          artifact.crossOrigin = "anonymous";
-          artifact.src = artifactImage.src;
-          artifact.onload = () => {
-            ctx.drawImage(artifact, canvas.width - 50, canvas.height - 50, 40, 40);
-
-            ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-            ctx.beginPath();
-            ctx.arc(canvas.width - 25, 25, 20, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.fillStyle = "white";
-            ctx.font = "12px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(constellationText.textContent, canvas.width - 25, 25);
-
-            const link = document.createElement('a');
-            link.href = canvas.toDataURL("image/png");
-            link.download = 'character_image.png';
-            link.click();
-          };
-        };
-      };
-    });
-  </script>
-</body>
-</html>
+  return (
+    <Card className="w-full max-w-3xl mx-auto">
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold text-center">ビルド画像ジェネレーター</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <div className="relative w-[200px] h-[200px] mx-auto">
+              <img
+                src={character}
+                alt="キャラクター"
+                className="w-full h-full object-cover rounded-lg"
+                crossOrigin="anonymous"
+              />
+              <img
+                src={weapon}
+                alt="武器"
+                className="absolute bottom-2 left-2 w-10 h-10 object-cover rounded-full border-2 border-primary"
+                crossOrigin="anonymous"
+              />
+              <img
+                src={artifact}
+                alt="聖遺物"
+                className="absolute bottom-2 right-2 w-10 h-10 object-cover rounded-full border-2 border-primary"
+                crossOrigin="anonymous"
+              />
+              <div className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center text-sm text-white bg-black bg-opacity-60 rounded-full border-2 border-primary">
+                {constellation === '未所持' ? '未所持' : `c${constellation}`}
+              </div>
+            </div>
+            <div className="flex justify-center space-x-4">
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving ? '保存中...' : '画像を保存'}
+                <Download className="ml-2 h-4 w-4" />
+              </Button>
+              <Button variant="outline" onClick={handleReset}>
+                リセット
+                <RefreshCw className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+            {error && (
+              <div className="text-red-500 text-center mt-2">{error}</div>
+            )}
+          </div>
+          <div>
+            <Tabs defaultValue="character" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="character">キャラ</TabsTrigger>
+                <TabsTrigger value="weapon">武器</TabsTrigger>
+                <TabsTrigger value="artifact">聖遺物</TabsTrigger>
+                <TabsTrigger value="constellation">凸数</TabsTrigger>
+              </TabsList>
+              <TabsContent value="character">
+                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                  {characters.map((item) => (
+                    <div key={item.value} className="flex items-center space-x-2 mb-2">
+                      <img src={item.value} alt={item.name} className="w-8 h-8 rounded-full" crossOrigin="anonymous" />
+                      <Label
+                        htmlFor={`character-${item.value}`}
+                        className="flex items-center space-x-2 cursor-pointer"
+                      >
+                        <input
+                          id={`character-${item.value}`}
+                          type="radio"
+                          value={item.value}
+                          checked={character === item.value}
+                          onChange={() => setCharacter(item.value)}
+                          className="sr-only"
+                        />
+                        <div className={`w-4 h-4 border rounded-full ${character === item.value ? 'bg-primary border-primary' : 'border-gray-400'}`} />
+                        <span>{item.name}</span>
+                      </Label>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value="weapon">
+                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                  {weapons.map((item) => (
+                    <div key={item.value} className="flex items-center space-x-2 mb-2">
+                      <img src={item.value} alt={item.name} className="w-8 h-8 rounded-full" crossOrigin="anonymous" />
+                      <Label
+                        htmlFor={`weapon-${item.value}`}
+                        className="flex items-center space-x-2 cursor-pointer"
+                      >
+                        <input
+                          id={`weapon-${item.value}`}
+                          type="radio"
+                          value={item.value}
+                          checked={weapon === item.value}
+                          onChange={() => setWeapon(item.value)}
+                          className="sr-only"
+                        />
+                        <div className={`w-4 h-4 border rounded-full ${weapon === item.value ? 'bg-primary border-primary' : 'border-gray-400'}`} />
+                        <span>{item.name}</span>
+                      </Label>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value="artifact">
+                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                  {artifacts.map((item) => (
+                    <div key={item.value} className="flex items-center space-x-2 mb-2">
+                      <img src={item.value} alt={item.name} className="w-8 h-8 rounded-full" crossOrigin="anonymous" />
+                      <Label
+                        htmlFor={`artifact-${item.value}`}
+                        className="flex items-center space-x-2 cursor-pointer"
+                      >
+                        <input
+                          id={`artifact-${item.value}`}
+                          type="radio"
+                          value={item.value}
+                          checked={artifact === item.value}
+                          onChange={() => setArtifact(item.value)}
+                          className="sr-only"
+                        />
+                        <div className={`w-4 h-4 border rounded-full ${artifact === item.value ? 'bg-primary border-primary' : 'border-gray-400'}`} />
+                        <span>{item.name}</span>
+                      </Label>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value="constellation">
+                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                  {constellations.map((item) => (
+                    <div key={item.value} className="flex items-center space-x-2 mb-2">
+                      <Label
+                        htmlFor={`constellation-${item.value}`}
+                        className="flex items-center space-x-2 cursor-pointer"
+                      >
+                        <input
+                          id={`constellation-${item.value}`}
+                          type="radio"
+                          value={item.value}
+                          checked={constellation === item.value}
+                          onChange={() => setConstellation(item.value)}
+                          className="sr-only"
+                        />
+                        <div className={`w-4 h-4 border rounded-full ${constellation === item.value ? 'bg-primary border-primary' : 'border-gray-400'}`} />
+                        <span>{item.name}</span>
+                      </Label>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </CardContent>
+      <canvas ref={canvasRef} width="200" height="200" className="hidden" />
+    </Card>
+  )
+}
