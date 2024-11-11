@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>キャラクター画像の保存</title>
+  <title>ビルド画像ジェネレーター</title>
   <style>
     h2{
-      font-family:YuGothic;
+      font-family:Toppan Bunkyu Midashi Gothic;
       font-weight:bold;
       text-align:center;
     }
@@ -45,23 +45,24 @@
     <div id="constellation" class="constellation">c0</div>
   </div>
 
-  <!-- 各種選択ドロップダウンメニュー -->
   <label for="characterSelect">キャラクターを選択:</label>
   <select id="characterSelect">
-    <option value="images/character_tighnari.jpg">ティナリ</option>
-    <option value="images/character_yelan.jpg">イェラン</option>
+    <option value="bow_tighnari.img">ティナリ</option>
+    <option value="bow_yelan.img">夜蘭</option>
   </select>
 
   <label for="weaponSelect">武器を選択:</label>
   <select id="weaponSelect">
-    <option value="images/weapon1.png">狩人</option>
-    <option value="images/weapon2.png">若水</option>
+    <option value="https://img.gamewith.jp/article_tools/genshin/gacha/weapon_141.png">狩人</option>
+    <option value="bow_aqua.img">若水</option>
+    <option value="images/weapon2.png">武器2</option>
   </select>
 
   <label for="artifactSelect">聖遺物を選択:</label>
   <select id="artifactSelect">
-    <option value="images/artifact1.png">楽団</option>
-    <option value="images/artifact2.png">絶縁</option>
+    <option value="https://img.game8.jp/5155671/7a90ec32c6c8fb694b381888a098ca80.jpeg/show">楽団</option>
+    <option value="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFUF06ATqNgborlAmBV7T3DgjOYO1_LQ8HtA&s">絶縁</option>
+    <option value="images/artifact2.png">聖遺物2</option>
   </select>
 
   <label for="constellationSelect">凸数を選択:</label>
@@ -112,16 +113,19 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const character = new Image();
+      character.crossOrigin = "anonymous";
       character.src = characterImage.src;
       character.onload = () => {
         ctx.drawImage(character, 0, 0, canvas.width, canvas.height);
 
         const weapon = new Image();
+        weapon.crossOrigin = "anonymous";
         weapon.src = weaponImage.src;
         weapon.onload = () => {
           ctx.drawImage(weapon, 10, canvas.height - 50, 40, 40);
 
           const artifact = new Image();
+          artifact.crossOrigin = "anonymous";
           artifact.src = artifactImage.src;
           artifact.onload = () => {
             ctx.drawImage(artifact, canvas.width - 50, canvas.height - 50, 40, 40);
